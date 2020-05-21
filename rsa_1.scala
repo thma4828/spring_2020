@@ -9,17 +9,10 @@ class RSA(hi : Int){
   private var prime_list : Array[Int] = Array[Int]()
   private var mess_cipher : Array[BigInt] = Array[BigInt]()
   private var is_encoded : Boolean = false
+
   def gcd(a : Int, b: Int) : Int = b match{
     case 0 => {a}
     case _ => {gcd(b, a % b)}
-  }
-
-  def gcd(a : BigInt, b : BigInt) : BigInt = {
-    if (b == 0){
-      a
-    }else{
-      gcd(b, a % b)
-    }
   }
 
   private def sieve(): Unit = {
@@ -63,19 +56,6 @@ class RSA(hi : Int){
     e
   }
 
-  private def BigPowMod(a : BigInt, b : BigInt, c : BigInt) : BigInt = {
-    assert(a != BigInt(0), "a is 0")
-    assert(b != BigInt(0), "b is 0")
-    assert(c != BigInt(0), "c is 0")
-    val one : BigInt = BigInt(1)
-    var product : BigInt = BigInt(1)
-    var i : BigInt = BigInt(1)
-    while(i < b){
-      product = product * a
-      i = i + one
-    }
-    product % c
-  }
 
   def encode(m : String) : Unit = {
     val enc_msg_bits : Array[BigInt]= encode_message_bits(m)
@@ -87,6 +67,23 @@ class RSA(hi : Int){
     assert(is_encoded, "cannot decode, internal module does not have the message.")
     val dec_msg_bits = decode_message_bits(mess_cipher)
     convert_to_string(dec_msg_bits)
+  }
+
+  def decode_cipher(m : Array[BigInt]) : String = {
+    val dec_msg_bits = decode_message_bits(m)
+    convert_to_string(dec_msg_bits)
+  }
+
+  def encode_with_key(m : String, n : BigInt, e : BigInt) : Array[BigInt] = {
+    assert(n != BigInt(0) && e != BigInt(0) && n.gcd(e) != BigInt(1), "key invalid")
+    var bits : Array[BigInt] = Array()
+    for(c <- 0 until m.length()){
+      val a : BigInt = BigInt(m(c).toInt)
+      assert(a < n, "encoded byte NOT less than n")
+      var b2 = bits :+ a
+      bits = b2
+    }
+    bits.map(e => e.modPow(e, n))
   }
 
   private def encode_message_bits(message : String) : Array[BigInt] = {
@@ -137,7 +134,7 @@ class RSA(hi : Int){
     sieve()
     val list_of_primes = prime_list
     val random_generator = Random
-    random_generator.setSeed(991L)
+    random_generator.setSeed(653291L)
     val length = list_of_primes.length
     var q : BigInt =  0
     var p : BigInt = 0
@@ -163,21 +160,21 @@ class RSA(hi : Int){
       e = choose_e(p, q, list_of_primes, length)
     }
 
-    if(gcd(e, z) == 1){
+    if(e.gcd(z) == 1){
       E = e
       N = n
       //Console.println("N = ", N)
       //Console.println("E = ", E)
       (n, e)
     }else{
-      while(gcd(e, z) != 1){
+      while(e.gcd(z) != 1){
         e = choose_e(p, q, list_of_primes, length)
       }
       E = e
       N = n
       //Console.println("N = ", N)
       //Console.println("E = ", E)
-      (n, e)
+      (n, e) //the public key
     }
   }
 }
@@ -188,9 +185,10 @@ val rsa = new RSA(1000)
 val publicKey = rsa.choose_public_key()
 rsa.choose_private_key()
 
-rsa.encode("big ups from my young homie")
+rsa.encode("big ups from my young homie, his phone number is 430-221-1984 hit em up on the downlow jah feel be easy ^^^1000")
 
 val s : String = rsa.decode()
 
 Console.println(publicKey._1, publicKey._2)
+Console.println("N has ", publicKey._1.bitLength, "bits and E has ", publicKey._2.bitLength," bits.")
 Console.println(s)
